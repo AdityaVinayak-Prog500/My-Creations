@@ -1,0 +1,6 @@
+variable,lag_months,n,correlation
+ppi_inflation,0,21,0.849737819
+wpi_fuel_inflation,5,16,0.686123278
+wpi_inflation,0,21,0.897511133
+wpi_manufacturing_inflation,6,15,-0.794108053
+wpi_primary_inflation,0,21,0.961185105

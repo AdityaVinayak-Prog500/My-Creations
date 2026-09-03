@@ -1,0 +1,4 @@
+Test,Statistic,p_value
+ADF — CPI Inflation Level,-1.4836,0.5416
+KPSS — CPI Inflation Level,0.575,0.0249
+ADF — First Difference,-3.5274,0.0073
