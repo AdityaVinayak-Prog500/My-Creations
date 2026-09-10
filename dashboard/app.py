@@ -1446,14 +1446,17 @@ elif page == "Price Transmission":
 
     common = common_yoy.copy()
 
-# Temporary QA readout: confirms exactly which common-sample data
-# reached the dashboard before chart rendering.
-if "date" in common.columns and not common.empty:
-    common["date"] = pd.to_datetime(common["date"], errors="coerce")
-    st.caption(
-        f"QA — Common sample loaded: {len(common)} rows | "
-        f"{common['date'].min():%b %Y} → {common['date'].max():%b %Y}"
-    )
+    # Temporary QA readout: confirms exactly which common-sample data
+    # reached the dashboard before chart rendering.
+    if "date" in common.columns and not common.empty:
+        common["date"] = pd.to_datetime(
+            common["date"],
+            errors="coerce"
+        )
+        st.caption(
+            f"QA — Common sample loaded: {len(common)} rows | "
+            f"{common['date'].min():%b %Y} → {common['date'].max():%b %Y}"
+        )
 
     if "date" in common.columns:
 
