@@ -87,7 +87,6 @@ COMMON_YOY_FILE = (
 )
 
 
-@st.cache_data
 def load_common_yoy_sample():
     """Load the retained 21-observation CPI-WPI-PPI common sample directly."""
 
@@ -204,6 +203,11 @@ def load_all_data():
     lagged,
     lagged_summary,
 ) = load_all_data()
+
+# IMPORTANT: load_all_data() is cached for the rest of the dashboard.
+# Refresh the retained common CPI-WPI-PPI sample independently so the
+# Price Transmission chart cannot reuse a stale cached 10-row dataset.
+common_yoy = load_common_yoy_sample()
 
 
 # ============================================================
