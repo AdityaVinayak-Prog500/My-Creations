@@ -1417,6 +1417,14 @@ elif page == "Price Transmission":
             hovermode="x unified",
         )
 
+        # Show the complete Apr 2024-Dec 2025 common sample
+        # clearly on the x-axis instead of letting Plotly omit
+        # the later date labels due to automatic tick selection.
+        fig.update_xaxes(
+            dtick="M3",
+            tickformat="%b %Y",
+        )
+
         st.plotly_chart(
             fig,
             use_container_width=True,
