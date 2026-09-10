@@ -204,9 +204,10 @@ def load_all_data():
     lagged_summary,
 ) = load_all_data()
 
-# IMPORTANT: load_all_data() is cached for the rest of the dashboard.
-# Refresh the retained common CPI-WPI-PPI sample independently so the
-# Price Transmission chart cannot reuse a stale cached 10-row dataset.
+
+# Always refresh the retained Phase 11 common sample outside the
+# cached dashboard bundle. This prevents an old cached 10-observation
+# sample from surviving after the CSV has been updated to 21 rows.
 common_yoy = load_common_yoy_sample()
 
 
@@ -1449,18 +1450,6 @@ elif page == "Price Transmission":
     # --------------------------------------------------------
 
     common = common_yoy.copy()
-
-    # Temporary QA readout: confirms exactly which common-sample data
-    # reached the dashboard before chart rendering.
-    if "date" in common.columns and not common.empty:
-        common["date"] = pd.to_datetime(
-            common["date"],
-            errors="coerce"
-        )
-        st.caption(
-            f"QA — Common sample loaded: {len(common)} rows | "
-            f"{common['date'].min():%b %Y} → {common['date'].max():%b %Y}"
-        )
 
     if "date" in common.columns:
 
