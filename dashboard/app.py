@@ -74,58 +74,6 @@ st.markdown(
 
 
 # ============================================================
-# LOAD ALL DASHBOARD DATA
-# ============================================================
-
-@st.cache_data
-def load_all_data():
-
-    master = prepare_master_data()
-    forecasts = prepare_forecasts()
-    phase11_2 = prepare_phase11_2_predictions()
-    models = prepare_model_comparison()
-    walk_forward = prepare_walk_forward_results()
-    cpi_wpi_ppi = prepare_cpi_wpi_ppi()
-    diagnostics = prepare_diagnostics()
-    residuals = prepare_residual_diagnostics()
-    transmission = prepare_transmission_data()
-    common_yoy = load_common_yoy_sample()
-    lagged = prepare_lagged_correlations()
-    lagged_summary = prepare_lagged_correlation_summary()
-
-    return (
-        master,
-        forecasts,
-        phase11_2,
-        models,
-        walk_forward,
-        cpi_wpi_ppi,
-        diagnostics,
-        residuals,
-        transmission,
-        common_yoy,
-        lagged,
-        lagged_summary,
-    )
-
-
-(
-    master,
-    forecasts,
-    phase11_2,
-    models,
-    walk_forward,
-    cpi_wpi_ppi,
-    diagnostics,
-    residuals,
-    transmission,
-    common_yoy,
-    lagged,
-    lagged_summary,
-) = load_all_data()
-
-
-# ============================================================
 # PRICE TRANSMISSION COMMON SAMPLE — DIRECT DATA LOAD
 # ============================================================
 
@@ -203,6 +151,59 @@ def load_common_yoy_sample():
     )
 
     return common
+
+
+
+# ============================================================
+# LOAD ALL DASHBOARD DATA
+# ============================================================
+
+@st.cache_data
+def load_all_data():
+
+    master = prepare_master_data()
+    forecasts = prepare_forecasts()
+    phase11_2 = prepare_phase11_2_predictions()
+    models = prepare_model_comparison()
+    walk_forward = prepare_walk_forward_results()
+    cpi_wpi_ppi = prepare_cpi_wpi_ppi()
+    diagnostics = prepare_diagnostics()
+    residuals = prepare_residual_diagnostics()
+    transmission = prepare_transmission_data()
+    common_yoy = load_common_yoy_sample()
+    lagged = prepare_lagged_correlations()
+    lagged_summary = prepare_lagged_correlation_summary()
+
+    return (
+        master,
+        forecasts,
+        phase11_2,
+        models,
+        walk_forward,
+        cpi_wpi_ppi,
+        diagnostics,
+        residuals,
+        transmission,
+        common_yoy,
+        lagged,
+        lagged_summary,
+    )
+
+
+(
+    master,
+    forecasts,
+    phase11_2,
+    models,
+    walk_forward,
+    cpi_wpi_ppi,
+    diagnostics,
+    residuals,
+    transmission,
+    common_yoy,
+    lagged,
+    lagged_summary,
+) = load_all_data()
 
 
 # ============================================================
