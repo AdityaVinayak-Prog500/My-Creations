@@ -207,8 +207,26 @@ def load_current_cpi_components():
         except Exception:
             continue
 
-        required = {"year", "month"}
-        if not required.issubset(df.columns):
+        # Support the current normalized files (date + index) as well as
+        # older year/month layouts.
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        elif {"year", "month"}.issubset(df.columns):
+            month_map = {
+                "january": 1, "february": 2, "march": 3,
+                "april": 4, "may": 5, "june": 6,
+                "july": 7, "august": 8, "september": 9,
+                "october": 10, "november": 11, "december": 12,
+            }
+            df["month_num"] = (
+                df["month"].astype(str).str.strip().str.lower().map(month_map)
+            )
+            df["year"] = pd.to_numeric(df["year"], errors="coerce")
+            df["date"] = pd.to_datetime(
+                dict(year=df["year"], month=df["month_num"], day=1),
+                errors="coerce",
+            )
+        else:
             continue
 
         # Keep the national current General CPI series.
@@ -249,27 +267,7 @@ def load_current_cpi_components():
         if value_col is None:
             continue
 
-        month_map = {
-            "january": 1, "february": 2, "march": 3,
-            "april": 4, "may": 5, "june": 6,
-            "july": 7, "august": 8, "september": 9,
-            "october": 10, "november": 11, "december": 12,
-        }
-
-        df["month_num"] = (
-            df["month"].astype(str).str.strip().str.lower().map(month_map)
-        )
-        df["year"] = pd.to_numeric(df["year"], errors="coerce")
         df[value_col] = pd.to_numeric(df[value_col], errors="coerce")
-
-        df["date"] = pd.to_datetime(
-            dict(
-                year=df["year"],
-                month=df["month_num"],
-                day=1,
-            ),
-            errors="coerce",
-        )
 
         out = (
             df[["date", value_col]]
