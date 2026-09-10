@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -125,6 +127,53 @@ def load_all_data():
 
 
 # ============================================================
+# CURRENT CPI (2024 BASE) — DISPLAY SERIES
+# ============================================================
+
+CURRENT_CPI_FILE = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "raw"
+    / "cpi_combined_current_2024base.csv"
+)
+
+
+@st.cache_data
+def load_current_cpi():
+    """Load the latest official CPI inflation series on the 2024=100 base."""
+
+    if not CURRENT_CPI_FILE.exists():
+        return pd.DataFrame(columns=["date", "cpi_yoy"])
+
+    current_cpi = pd.read_csv(CURRENT_CPI_FILE)
+
+    if "date" not in current_cpi.columns or "cpi_yoy" not in current_cpi.columns:
+        return pd.DataFrame(columns=["date", "cpi_yoy"])
+
+    current_cpi["date"] = pd.to_datetime(
+        current_cpi["date"],
+        errors="coerce",
+    )
+    current_cpi["cpi_yoy"] = pd.to_numeric(
+        current_cpi["cpi_yoy"],
+        errors="coerce",
+    )
+
+    current_cpi = (
+        current_cpi[["date", "cpi_yoy"]]
+        .dropna()
+        .sort_values("date")
+        .drop_duplicates(subset="date", keep="last")
+        .reset_index(drop=True)
+    )
+
+    return current_cpi
+
+
+current_cpi = load_current_cpi()
+
+
+# ============================================================
 # MASTER DATA PREPARATION
 # ============================================================
 
@@ -147,6 +196,37 @@ master["cpi_yoy"] = (
     .pct_change(12)
     * 100
 )
+
+
+# Build a display-only CPI series by combining:
+# - historical 2012=100 CPI-derived YoY inflation, and
+# - official published YoY inflation from the current 2024=100 CPI series.
+#
+# We deliberately do NOT calculate pct_change(12) across the base-year
+# revision, because the old and new CPI series are not directly comparable.
+cpi_display = (
+    master[["date", "cpi_yoy"]]
+    .dropna()
+    .copy()
+)
+
+if not current_cpi.empty:
+    historical_cpi = cpi_display[
+        cpi_display["date"] < current_cpi["date"].min()
+    ].copy()
+
+    cpi_display = (
+        pd.concat(
+            [
+                historical_cpi,
+                current_cpi[["date", "cpi_yoy"]],
+            ],
+            ignore_index=True,
+        )
+        .sort_values("date")
+        .drop_duplicates(subset="date", keep="last")
+        .reset_index(drop=True)
+    )
 
 
 # ============================================================
@@ -242,9 +322,10 @@ def clean_forecasts(df):
 # LATEST INDICATORS
 # ============================================================
 
-# CPI latest observation comes from the master dataset.
+# CPI latest observation comes from the display series, which
+# includes the current 2024=100 CPI observations.
 cpi_date, cpi_yoy = latest_metric(
-    master,
+    cpi_display,
     "cpi_yoy"
 )
 
@@ -370,7 +451,7 @@ if page == "Overview":
     )
 
     cpi_plot = (
-        master[
+        cpi_display[
             ["date", "cpi_yoy"]
         ]
         .dropna()
@@ -398,6 +479,13 @@ if page == "Overview":
     st.plotly_chart(
         fig_cpi,
         use_container_width=True,
+    )
+
+    st.caption(
+        "CPI inflation combines the historical 2012=100 series with "
+        "officially published YoY inflation from the current 2024=100 "
+        "series from Jan 2026 onward; no growth rate is calculated "
+        "across the base-year revision."
     )
 
     # --------------------------------------------------------
@@ -476,7 +564,7 @@ elif page == "Inflation Trends":
     # --------------------------------------------------------
 
     cpi_plot = (
-        master[
+        cpi_display[
             ["date", "cpi_yoy"]
         ]
         .dropna()
@@ -504,6 +592,12 @@ elif page == "Inflation Trends":
     st.plotly_chart(
         fig_cpi,
         use_container_width=True,
+    )
+
+    st.caption(
+        "The CPI trend uses the historical 2012=100 series through "
+        "Dec 2025 and the official 2024=100 published YoY series "
+        "from Jan 2026 onward."
     )
 
     # --------------------------------------------------------
