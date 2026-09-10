@@ -15,7 +15,6 @@ from utils import (
     prepare_diagnostics,
     prepare_residual_diagnostics,
     prepare_transmission_data,
-    prepare_common_yoy_sample,
     prepare_lagged_correlations,
     prepare_lagged_correlation_summary,
 )
@@ -90,7 +89,7 @@ def load_all_data():
     diagnostics = prepare_diagnostics()
     residuals = prepare_residual_diagnostics()
     transmission = prepare_transmission_data()
-    common_yoy = prepare_common_yoy_sample()
+    common_yoy = load_common_yoy_sample()
     lagged = prepare_lagged_correlations()
     lagged_summary = prepare_lagged_correlation_summary()
 
@@ -124,6 +123,86 @@ def load_all_data():
     lagged,
     lagged_summary,
 ) = load_all_data()
+
+
+# ============================================================
+# PRICE TRANSMISSION COMMON SAMPLE — DIRECT DATA LOAD
+# ============================================================
+
+COMMON_YOY_FILE = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "mnt"
+    / "data"
+    / "phase11_results"
+    / "phase11_common_yoy_sample.csv"
+)
+
+
+@st.cache_data
+def load_common_yoy_sample():
+    """Load the retained 21-observation CPI-WPI-PPI common sample directly."""
+
+    if not COMMON_YOY_FILE.exists():
+        return pd.DataFrame(
+            columns=[
+                "date",
+                "cpi_inflation",
+                "wpi_inflation",
+                "ppi_inflation",
+            ]
+        )
+
+    common = pd.read_csv(COMMON_YOY_FILE)
+
+    required = {
+        "date",
+        "cpi_inflation",
+        "wpi_inflation",
+        "ppi_inflation",
+    }
+
+    if not required.issubset(common.columns):
+        return pd.DataFrame(
+            columns=[
+                "date",
+                "cpi_inflation",
+                "wpi_inflation",
+                "ppi_inflation",
+            ]
+        )
+
+    common["date"] = pd.to_datetime(
+        common["date"],
+        errors="coerce",
+    )
+
+    for column in [
+        "cpi_inflation",
+        "wpi_inflation",
+        "ppi_inflation",
+    ]:
+        common[column] = pd.to_numeric(
+            common[column],
+            errors="coerce",
+        )
+
+    common = (
+        common[
+            [
+                "date",
+                "cpi_inflation",
+                "wpi_inflation",
+                "ppi_inflation",
+            ]
+        ]
+        .dropna()
+        .sort_values("date")
+        .drop_duplicates(subset="date", keep="last")
+        .reset_index(drop=True)
+    )
+
+    return common
 
 
 # ============================================================
@@ -1423,12 +1502,23 @@ elif page == "Price Transmission":
         fig.update_xaxes(
             dtick="M3",
             tickformat="%b %Y",
+            range=[
+                pd.Timestamp("2024-03-15"),
+                pd.Timestamp("2026-01-15"),
+            ],
         )
 
         st.plotly_chart(
             fig,
             use_container_width=True,
         )
+
+        if not common_plot.empty:
+            st.caption(
+                f"Common sample shown: {common_plot['date'].min():%b %Y} to "
+                f"{common_plot['date'].max():%b %Y} — "
+                f"{len(common_plot)} complete observations."
+            )
 
     # --------------------------------------------------------
     # LAGGED CORRELATIONS
