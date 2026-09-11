@@ -74,84 +74,56 @@ st.markdown(
 
 
 # ============================================================
-# PRICE TRANSMISSION COMMON SAMPLE — DIRECT DATA LOAD
+# PRICE TRANSMISSION COMMON SAMPLE — DERIVED FROM TRANSMISSION DATA
 # ============================================================
 
-COMMON_YOY_FILE = (
-    Path(__file__).resolve().parents[1]
-    / "data"
-    / "mnt"
-    / "data"
-    / "phase11_results"
-    / "phase11_common_yoy_sample.csv"
-)
+def build_common_yoy_sample(transmission: pd.DataFrame) -> pd.DataFrame:
+    """Build the retained CPI-WPI-Output PPI common sample directly
+    from the Phase 11 transmission dataset.
 
+    This avoids relying on a second, potentially stale copy of the
+    common-sample CSV. The research design retains the complete
+    overlap from Apr 2024 through Dec 2025.
+    """
 
-@st.cache_data
-def load_common_yoy_sample():
-    """Load the retained 21-observation CPI-WPI-PPI common sample directly."""
-
-    if not COMMON_YOY_FILE.exists():
-        return pd.DataFrame(
-            columns=[
-                "date",
-                "cpi_inflation",
-                "wpi_inflation",
-                "ppi_inflation",
-            ]
-        )
-
-    common = pd.read_csv(COMMON_YOY_FILE)
-
-    required = {
+    required = [
         "date",
         "cpi_inflation",
         "wpi_inflation",
         "ppi_inflation",
-    }
+    ]
 
-    if not required.issubset(common.columns):
-        return pd.DataFrame(
-            columns=[
-                "date",
-                "cpi_inflation",
-                "wpi_inflation",
-                "ppi_inflation",
-            ]
-        )
+    if not all(column in transmission.columns for column in required):
+        return pd.DataFrame(columns=required)
+
+    common = transmission[required].copy()
 
     common["date"] = pd.to_datetime(
         common["date"],
         errors="coerce",
     )
 
-    for column in [
-        "cpi_inflation",
-        "wpi_inflation",
-        "ppi_inflation",
-    ]:
+    for column in required[1:]:
         common[column] = pd.to_numeric(
             common[column],
             errors="coerce",
         )
 
     common = (
-        common[
-            [
-                "date",
-                "cpi_inflation",
-                "wpi_inflation",
-                "ppi_inflation",
-            ]
-        ]
-        .dropna()
+        common
+        .dropna(subset=required)
         .sort_values("date")
+        .loc[
+            lambda df: (
+                (df["date"] >= pd.Timestamp("2024-04-01"))
+                & (df["date"] <= pd.Timestamp("2025-12-01"))
+            )
+        ]
         .drop_duplicates(subset="date", keep="last")
         .reset_index(drop=True)
     )
 
     return common
-
 
 
 # ============================================================
@@ -170,7 +142,7 @@ def load_all_data():
     diagnostics = prepare_diagnostics()
     residuals = prepare_residual_diagnostics()
     transmission = prepare_transmission_data()
-    common_yoy = load_common_yoy_sample()
+    common_yoy = build_common_yoy_sample(transmission)
     lagged = prepare_lagged_correlations()
     lagged_summary = prepare_lagged_correlation_summary()
 
@@ -1497,15 +1469,13 @@ elif page == "Price Transmission":
             hovermode="x unified",
         )
 
-        # Show the complete Apr 2024-Dec 2025 common sample
-        # clearly on the x-axis instead of letting Plotly omit
-        # the later date labels due to automatic tick selection.
+        # Show the complete retained Apr 2024-Dec 2025 sample.
         fig.update_xaxes(
             dtick="M3",
             tickformat="%b %Y",
             range=[
                 pd.Timestamp("2024-03-15"),
-                pd.Timestamp("2026-01-15"),
+                pd.Timestamp("2026-01-01"),
             ],
         )
 
