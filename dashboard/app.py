@@ -114,9 +114,10 @@ def load_common_yoy_sample_direct() -> pd.DataFrame:
     common = common[required].copy()
 
     common["date"] = pd.to_datetime(
-        common["date"],
-        errors="coerce",
-    )
+            common["date"],
+            format="%d-%m-%Y",
+            errors="coerce",
+        )
 
     for column in required[1:]:
         common[column] = pd.to_numeric(
@@ -1441,6 +1442,7 @@ elif page == "Price Transmission":
 
         common["date"] = pd.to_datetime(
             common["date"],
+            format="%d-%m-%Y",
             errors="coerce"
         )
 
