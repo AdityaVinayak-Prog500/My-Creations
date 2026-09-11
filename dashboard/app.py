@@ -74,16 +74,26 @@ st.markdown(
 
 
 # ============================================================
-# PRICE TRANSMISSION COMMON SAMPLE — DERIVED FROM TRANSMISSION DATA
+# PRICE TRANSMISSION COMMON SAMPLE — DIRECT CSV SOURCE
 # ============================================================
 
-def build_common_yoy_sample(transmission: pd.DataFrame) -> pd.DataFrame:
-    """Build the retained CPI-WPI-Output PPI common sample directly
-    from the Phase 11 transmission dataset.
+COMMON_YOY_FILE = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "mnt"
+    / "data"
+    / "phase11_results"
+    / "phase11_common_yoy_sample.csv"
+)
 
-    This avoids relying on a second, potentially stale copy of the
-    common-sample CSV. The research design retains the complete
-    overlap from Apr 2024 through Dec 2025.
+
+def load_common_yoy_sample_direct() -> pd.DataFrame:
+    """Load the retained 21-observation common sample directly from CSV.
+
+    This chart deliberately uses the retained Phase 11 common-sample CSV,
+    which contains the complete Apr 2024-Dec 2025 overlap. It is kept
+    separate from the cached transmission-data loader because the latter
+    may contain a shorter display series for other dashboard purposes.
     """
 
     required = [
@@ -93,10 +103,15 @@ def build_common_yoy_sample(transmission: pd.DataFrame) -> pd.DataFrame:
         "ppi_inflation",
     ]
 
-    if not all(column in transmission.columns for column in required):
+    if not COMMON_YOY_FILE.exists():
         return pd.DataFrame(columns=required)
 
-    common = transmission[required].copy()
+    common = pd.read_csv(COMMON_YOY_FILE)
+
+    if not all(column in common.columns for column in required):
+        return pd.DataFrame(columns=required)
+
+    common = common[required].copy()
 
     common["date"] = pd.to_datetime(
         common["date"],
@@ -142,7 +157,7 @@ def load_all_data():
     diagnostics = prepare_diagnostics()
     residuals = prepare_residual_diagnostics()
     transmission = prepare_transmission_data()
-    common_yoy = build_common_yoy_sample(transmission)
+    common_yoy = load_common_yoy_sample_direct()
     lagged = prepare_lagged_correlations()
     lagged_summary = prepare_lagged_correlation_summary()
 
@@ -176,6 +191,10 @@ def load_all_data():
     lagged,
     lagged_summary,
 ) = load_all_data()
+
+# The retained common-sample chart is always read directly from the
+# dedicated 21-observation CSV, independent of the cached dashboard bundle.
+common_yoy = load_common_yoy_sample_direct()
 
 
 # ============================================================
@@ -1449,7 +1468,8 @@ elif page == "Price Transmission":
             common[
                 required
             ]
-            .dropna()
+            .dropna(subset=required)
+            .sort_values("date")
         )
 
         fig = px.line(
