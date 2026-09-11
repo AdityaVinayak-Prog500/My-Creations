@@ -87,6 +87,7 @@ COMMON_YOY_FILE = (
 )
 
 
+@st.cache_data
 def load_common_yoy_sample():
     """Load the retained 21-observation CPI-WPI-PPI common sample directly."""
 
@@ -203,12 +204,6 @@ def load_all_data():
     lagged,
     lagged_summary,
 ) = load_all_data()
-
-
-# Always refresh the retained Phase 11 common sample outside the
-# cached dashboard bundle. This prevents an old cached 10-observation
-# sample from surviving after the CSV has been updated to 21 rows.
-common_yoy = load_common_yoy_sample()
 
 
 # ============================================================
