@@ -139,14 +139,12 @@ These results indicate strong statistical co-movement in the common sample.
 
 ## Key Findings
 
-- ARIMA(1,1,1) emerged as a strong initial model specification in the forecasting workflow.
-- Walk-forward validation is used as the primary framework for assessing out-of-sample forecasting performance.
-- CPI, WPI and Output PPI exhibit substantial statistical co-movement over the common sample.
-- WPI Primary Articles and WPI All Commodities show particularly strong contemporaneous association with CPI inflation.
-- WPI Fuel & Power and WPI Manufactured Products show stronger relationships at non-zero lags.
-- The price-transmission results are exploratory and should not be interpreted as causal estimates.
-
----
+- ARIMA(1,1,1) emerged as the best-performing model in the initial model comparison by RMSE.
+- Walk-forward validation provides the primary out-of-sample evaluation framework.
+- In the Phase 11.2 one-step-ahead benchmark, the CPI-only specification achieved an RMSE of 0.7676.
+- The CPI + WPI specification achieved an RMSE of 1.0928, while CPI + WPI + PPI achieved 1.0446.
+- WPI and Output PPI exhibit substantial contemporaneous and lagged correlation with CPI inflation in the 21-observation common sample.
+- These correlations are treated as descriptive evidence rather than causal estimates.
 
 ## Dashboard
 
