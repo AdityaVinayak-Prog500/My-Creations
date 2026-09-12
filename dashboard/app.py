@@ -63,8 +63,31 @@ st.markdown(
         padding: 1rem 1.2rem;
         border-radius: 0.65rem;
         border: 1px solid rgba(128, 128, 128, 0.25);
+        background: rgba(128, 128, 128, 0.06);
         margin-top: 1rem;
         margin-bottom: 1rem;
+    }
+
+    .eyebrow {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.62;
+        margin-bottom: 0.25rem;
+    }
+
+    .takeaway-card {
+        padding: 1rem 1.15rem;
+        border-radius: 0.7rem;
+        border: 1px solid rgba(128, 128, 128, 0.22);
+        background: rgba(128, 128, 128, 0.045);
+        min-height: 8rem;
+    }
+
+    .takeaway-card strong {
+        display: block;
+        margin-bottom: 0.35rem;
     }
 
     </style>
@@ -437,6 +460,25 @@ if not current_cpi_components.empty:
 
 
 # ============================================================
+# OVERVIEW BENCHMARK SUMMARY
+# ============================================================
+
+phase11_summary_overview = pd.DataFrame()
+if not phase11_2.empty and {"model", "error"}.issubset(phase11_2.columns):
+    phase11_summary_overview = (
+        phase11_2
+        .groupby("model")
+        .agg(
+            RMSE=("error", lambda x: (x.pow(2).mean()) ** 0.5),
+            MAE=("error", lambda x: x.abs().mean()),
+            Forecasts=("error", "count"),
+        )
+        .reset_index()
+        .sort_values("RMSE")
+    )
+
+
+# ============================================================
 # SIDEBAR
 # ============================================================
 
@@ -555,6 +597,11 @@ ppi_date, ppi_yoy = latest_metric(
 # ============================================================
 
 if page == "Overview":
+
+    st.markdown(
+        '<div class="eyebrow">Applied Econometrics • India • Monthly CPI</div>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         '<div class="main-title">'
@@ -694,6 +741,55 @@ if page == "Overview":
         "series from Jan 2026 onward; no growth rate is calculated "
         "across the base-year revision."
     )
+
+    # --------------------------------------------------------
+    # RESEARCH TAKEAWAYS
+    # --------------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">Research Takeaways</div>',
+        unsafe_allow_html=True,
+    )
+
+    takeaway_col1, takeaway_col2 = st.columns(2)
+
+    with takeaway_col1:
+        if not phase11_summary_overview.empty:
+            best_row = phase11_summary_overview.iloc[0]
+            cpi_only = phase11_summary_overview[
+                phase11_summary_overview["model"].astype(str).str.strip().str.lower() == "cpi-only"
+            ]
+            if not cpi_only.empty:
+                baseline_rmse = float(cpi_only.iloc[0]["RMSE"])
+                best_rmse = float(best_row["RMSE"])
+                if str(best_row["model"]) == "CPI-only":
+                    takeaway = (
+                        f"CPI-only is the strongest one-step-ahead specification in the "
+                        f"small benchmark (RMSE {best_rmse:.3f})."
+                    )
+                else:
+                    takeaway = (
+                        f"The best one-step-ahead specification is {best_row['model']} "
+                        f"(RMSE {best_rmse:.3f}) versus CPI-only at {baseline_rmse:.3f}."
+                    )
+            else:
+                takeaway = f"Best one-step-ahead RMSE: {float(best_row['RMSE']):.3f}."
+        else:
+            takeaway = "One-step-ahead benchmark results are unavailable."
+
+        st.markdown(
+            f'<div class="takeaway-card"><strong>Forecast performance</strong>{takeaway}</div>',
+            unsafe_allow_html=True,
+        )
+
+    with takeaway_col2:
+        st.markdown(
+            '''<div class="takeaway-card"><strong>Interpretation</strong>
+            Strong co-movement between upstream prices and CPI is descriptive evidence;
+            it is not, by itself, evidence of causality or incremental forecasting value.
+            </div>''',
+            unsafe_allow_html=True,
+        )
 
     # --------------------------------------------------------
     # RESEARCH QUESTION
